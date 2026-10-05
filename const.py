@@ -44,7 +44,7 @@ DASHBOARD_FILTER_SETS = (
 CLIENT_ID = "HondaLinkAndroidApp0074"
 CLIENT_SECRET = "rETFrZcLyUycsSblksCP"
 DEVICE_DESCRIPTION = "Android"
-APP_USER_AGENT = "HondaLink/5.0.51 (Android)"
+APP_USER_AGENT = "HondaLink/5.5.0 (Android)"
 
 IDENTITY_BASE = "https://identity.services.honda.com"
 API_BASE = "https://wsc.hondaweb.com"

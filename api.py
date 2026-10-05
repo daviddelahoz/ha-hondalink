@@ -61,7 +61,7 @@ class HondaLinkCommandResult:
 
 
 def utc_timestamp() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def _lower_status(value: Any) -> str:
@@ -419,11 +419,21 @@ class HondaLinkAPI:
         await self.async_ensure_login()
         url = f"{API_BASE}{path}"
         headers = self._api_headers()
-        data = await self._send(method, url, headers=headers, json_body=json_body)
+        try:
+            data = await self._send(method, url, headers=headers, json_body=json_body)
+        except HondaLinkAuthError:
+            if not retry:
+                raise
+            self.access_token = None
+            self.client_reg_key = None
+            await self.async_login()
+            headers = self._api_headers()
+            data = await self._send(method, url, headers=headers, json_body=json_body)
 
         error_code = str((data.get("Header") or {}).get("ErrorCode") or "")
         if retry and error_code == "401":
             self.access_token = None
+            self.client_reg_key = None
             await self.async_login()
             headers = self._api_headers()
             data = await self._send(method, url, headers=headers, json_body=json_body)
@@ -461,6 +471,7 @@ class HondaLinkAPI:
     def _api_headers(self) -> dict[str, str]:
         headers = {
             "Authorization": f"Bearer {self.access_token}",
+            "bearerToken": self.access_token or "",
             "Accept": "application/json",
             "Content-Type": "application/json",
             "User-Agent": APP_USER_AGENT,
@@ -469,17 +480,13 @@ class HondaLinkAPI:
             "hondaHeaderType.siteId": self.client_reg_key or "",
             "hondaHeaderType.businessId": HONDALINK_BUSINESS_ID,
             "hondaHeaderType.systemId": HONDALINK_SYSTEM_ID,
-            "hondaHeaderType.collectedTimestamp": utc_timestamp(),
-            "hondaHeaderType.collectedTimeStamp": utc_timestamp(),
             "hondaHeaderType.clientType": "Mobile",
-            "hondaHeaderType.deviceID": self.device_id,
-            "hondaHeaderType.sessionID": self.session_id,
+            "hondaHeaderType.collectedTimestamp": utc_timestamp(),
             "hondaHeaderType.country_code": self.country,
             "hondaHeaderType.language_code": self.language,
         }
         if self.hidas_ident:
             headers["hondaHeaderType.userId"] = self.hidas_ident
-            headers["hondaHeaderType.hidasId"] = self.hidas_ident
         return headers
 
     def _vin(self) -> str:
