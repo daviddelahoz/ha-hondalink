@@ -10,7 +10,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_COORDINATOR, DOMAIN
 from .entity import HondaLinkEntity
-from .util import any_light_on, any_open_state, get_path, status_body
+from .util import any_light_on, any_open_state, engine_running, get_path, status_body
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -68,7 +68,7 @@ BINARY_SENSORS: tuple[HondaLinkBinarySensorDescription, ...] = (
     HondaLinkBinarySensorDescription(
         key="remote_engine_running",
         translation_key="remote_engine_running",
-        value_fn=lambda body: str(get_path(body, "remoteEngineStart.vehicleStartEvent.resStatus", "")).upper() == "ON",
+        value_fn=engine_running,
     ),
 )
 

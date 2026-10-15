@@ -336,3 +336,11 @@ def any_light_on(body: dict[str, Any]) -> bool | None:
             if str(item.get("lightState")).upper() != "OFF":
                 return True
     return False if found else None
+
+
+def engine_running(body: dict[str, Any]) -> bool | None:
+    """Honda reports "OFF", "ON", or "IG RUN" (ignition running); anything but OFF means running."""
+    status = str(get_path(body, "remoteEngineStart.vehicleStartEvent.resStatus") or "").strip().upper()
+    if status in ("", "UNKNOWN"):
+        return None
+    return status != "OFF"
