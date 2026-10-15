@@ -314,6 +314,15 @@ def all_door_locks_locked(body: dict[str, Any]) -> bool | None:
     return all(state.lower() == "lock" for state in states)
 
 
+def maintenance_messages(body: dict[str, Any]) -> list[Any] | None:
+    """Maintenance Minder messages; the live refresh nests them differently than the cached poll."""
+    minder = get_path(body, "maintenanceMinder")
+    if not isinstance(minder, dict):
+        return None
+    groups = [minder, *(item for item in minder.get("data") or [] if isinstance(item, dict))]
+    return [message for group in groups for message in group.get("messages") or []]
+
+
 def any_open_state(body: dict[str, Any], base: str, keys: list[str], state_key: str = "openState") -> bool | None:
     found = False
     for key in keys:

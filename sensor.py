@@ -5,7 +5,7 @@ from typing import Any, Callable
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfLength, UnitOfPressure, UnitOfSpeed
+from homeassistant.const import PERCENTAGE, UnitOfLength, UnitOfPressure, UnitOfSpeed, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -16,6 +16,7 @@ from .util import (
     find_12v_battery_status,
     get_path,
     leaf_paths,
+    maintenance_messages,
     parse_iso_datetime,
     status_body,
     to_float,
@@ -66,6 +67,13 @@ SENSORS: tuple[HondaLinkSensorDescription, ...] = (
         value_fn=lambda body: to_int(get_path(body, "oilLife.value")),
     ),
     HondaLinkSensorDescription(
+        key="maintenance_items",
+        translation_key="maintenance_items",
+        icon="mdi:wrench-clock",
+        value_fn=lambda body: None if (messages := maintenance_messages(body)) is None else len(messages),
+        attr_fn=lambda body: {"messages": maintenance_messages(body) or []},
+    ),
+    HondaLinkSensorDescription(
         key="12v_battery_status",
         translation_key="12v_battery_status",
         value_fn=find_12v_battery_status,
@@ -106,6 +114,14 @@ SENSORS: tuple[HondaLinkSensorDescription, ...] = (
         device_class=SensorDeviceClass.PRESSURE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=_tire("rearRight"),
+    ),
+    HondaLinkSensorDescription(
+        key="cabin_temperature",
+        translation_key="cabin_temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda body: to_float(get_path(body, "temperature.cabin.value")),
     ),
     HondaLinkSensorDescription(
         key="vehicle_speed",

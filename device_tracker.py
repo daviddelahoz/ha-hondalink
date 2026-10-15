@@ -6,7 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_COORDINATOR, DOMAIN
+from .const import CONF_VEHICLE_INFO, DATA_COORDINATOR, DOMAIN
 from .entity import HondaLinkEntity
 from .util import dms_to_decimal, get_path, status_body, to_float
 
@@ -21,6 +21,11 @@ class HondaLinkDeviceTracker(HondaLinkEntity, TrackerEntity):
 
     def __init__(self, coordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "location")
+
+    @property
+    def entity_picture(self) -> str | None:
+        vehicle = self.entry.data.get(CONF_VEHICLE_INFO) or {}
+        return vehicle.get("Asset34FrontPath") or vehicle.get("LargeFrontImage")
 
     @property
     def source_type(self) -> SourceType:
