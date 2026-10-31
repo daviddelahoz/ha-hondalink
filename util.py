@@ -318,7 +318,8 @@ def any_open_state(body: dict[str, Any], base: str, keys: list[str], state_key: 
     found = False
     for key in keys:
         value = get_path(body, f"{base}.{key}.{state_key}")
-        if value is not None:
+        # a cloud blip reports "unknown" for every door at once; that's no reading, not "open"
+        if value is not None and str(value).strip().lower() not in ("", "unknown"):
             found = True
             if str(value).lower() != "closed":
                 return True
@@ -331,7 +332,7 @@ def any_light_on(body: dict[str, Any]) -> bool | None:
         return None
     found = False
     for item in lights.values():
-        if isinstance(item, dict) and "lightState" in item:
+        if isinstance(item, dict) and str(item.get("lightState") or "").strip().upper() not in ("", "UNKNOWN"):
             found = True
             if str(item.get("lightState")).upper() != "OFF":
                 return True
