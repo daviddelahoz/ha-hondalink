@@ -28,6 +28,22 @@ This integration uses the HondaLink Android app API flow, observed while debuggi
 
 This is early custom-component work built from a validated HondaLink Android app flow observed during app debugging. It has been tested against a MY21 HondaLink telematics flow, but Honda can change these private endpoints at any time.
 
+## AcuraLink (experimental)
+
+Choose **AcuraLink** as the brand during setup to use an Acura account. This uses the AcuraLink Android app's client credentials, headers and refresh filters.
+
+On newer (2GX) vehicles the results of a refresh or remote command are not available from the REST results endpoint used for HondaLink; the app receives them over an AWS IoT MQTT channel. For Acura accounts the integration opens that channel (`paho-mqtt`) so that:
+
+- The Refresh button returns live data (lock state, doors, windows, lights, tire pressure, fuel range) instead of only the vehicle's last cached upload.
+- Lock, unlock, and other remote commands report their real result.
+- If the channel cannot be opened the integration falls back to the REST behavior and the cached data.
+
+Acura accounts also get an **Update location** button, which sends the app's Locate request. The location is not requested automatically; press the button (or call it from an automation) when you want a fresh position.
+
+Tested on a 2023 Acura MDX and a 2022 Acura RDX. Engine start/stop, horn, lights, and the 12V battery sensor have not been verified on Acura vehicles.
+
+After installing or updating, **restart Home Assistant** (a reload is not enough). The integration now depends on `paho-mqtt`, and the **Brand** option only appears in the setup form after a restart.
+
 ## Installation
 
 ### HACS

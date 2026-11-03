@@ -12,6 +12,7 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from .api import HondaLinkAPI
 from .const import (
     CONF_ACCESS_TOKEN,
+    CONF_BRAND,
     CONF_CLIENT_REG_KEY,
     CONF_COUNTRY,
     CONF_DEVICE_ID,
@@ -28,6 +29,7 @@ from .const import (
     CONF_VIN,
     DATA_API,
     DATA_COORDINATOR,
+    DEFAULT_BRAND,
     DEFAULT_LOCK_COMMAND,
     DEFAULT_UNLOCK_COMMAND,
     DOMAIN,
@@ -75,6 +77,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         session_id=data[CONF_SESSION_ID],
         lock_command=entry.options.get(CONF_LOCK_COMMAND, DEFAULT_LOCK_COMMAND),
         unlock_command=entry.options.get(CONF_UNLOCK_COMMAND, DEFAULT_UNLOCK_COMMAND),
+        brand=data.get(CONF_BRAND, DEFAULT_BRAND),
     )
     await api.async_ensure_login()
 
@@ -82,8 +85,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if any(data.get(key) != value for key, value in auth_data.items()):
         hass.config_entries.async_update_entry(entry, data={**data, **auth_data})
 
-    coordinator = HondaLinkDataUpdateCoordinator(hass, entry, api)
-    await coordinator.async_config_entry_first_refresh()
+    await api.async_ensure_push()
+    entry.async_on_unload(api.async_stop_push)
+
+    try:
+        coordinator = HondaLinkDataUpdateCoordinator(hass, entry, api)
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        await api.async_stop_push()
+        raise
+    if api.push_active:
+        # Populate lock and door state, which the cached dashboard does not include.
+        entry.async_create_background_task(hass, coordinator.async_initial_refresh(), f"{DOMAIN}-initial-refresh")
 
     hass.data[DOMAIN][entry.entry_id] = {
         DATA_API: api,

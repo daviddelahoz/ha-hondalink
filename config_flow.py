@@ -12,7 +12,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import HondaLinkAPI, HondaLinkAuthError, HondaLinkError
 from .const import (
+    BRANDS,
     CONF_ACCESS_TOKEN,
+    CONF_BRAND,
     CONF_CLIENT_REG_KEY,
     CONF_COUNTRY,
     CONF_DEVICE_ID,
@@ -30,6 +32,7 @@ from .const import (
     CONF_UNLOCK_COMMAND,
     CONF_VEHICLE_INFO,
     CONF_VIN,
+    DEFAULT_BRAND,
     DEFAULT_LOCK_COMMAND,
     DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
@@ -40,7 +43,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-def _vehicle_title(vehicle: dict[str, Any] | None, vin: str, custom_name: str | None = None) -> str:
+def _vehicle_title(vehicle: dict[str, Any] | None, vin: str, custom_name: str | None = None, make: str = "Honda") -> str:
     if custom_name:
         return custom_name
     vehicle = vehicle or {}
@@ -50,7 +53,7 @@ def _vehicle_title(vehicle: dict[str, Any] | None, vin: str, custom_name: str | 
     year = vehicle.get("ModelYear")
     model = vehicle.get("ModelGroupNameFriendly") or vehicle.get("ModelCode")
     if year and model:
-        return f"{year} Honda {model}"
+        return f"{year} {make} {model}"
     return f"{DEFAULT_NAME} {vin[-6:]}"
 
 
@@ -68,6 +71,7 @@ class HondaLinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._base_data: dict[str, Any] = {}
         self._vehicles: list[dict[str, Any]] = []
         self._custom_name: str | None = None
+        self._brand: str = DEFAULT_BRAND
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
@@ -78,6 +82,7 @@ class HondaLinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             pin = user_input[CONF_PIN].strip()
             vin = user_input.get(CONF_VIN, "").strip().upper()
             self._custom_name = user_input.get(CONF_NAME, "").strip() or None
+            self._brand = user_input.get(CONF_BRAND, DEFAULT_BRAND)
             device_id = str(uuid.uuid4())
             session_id = str(uuid.uuid4())
 
@@ -90,6 +95,7 @@ class HondaLinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vin=vin or None,
                 device_id=device_id,
                 session_id=session_id,
+                brand=self._brand,
             )
 
             try:
@@ -139,6 +145,7 @@ class HondaLinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
+                vol.Required(CONF_BRAND, default=DEFAULT_BRAND): vol.In({key: item["name"] for key, item in BRANDS.items()}),
                 vol.Required(CONF_EMAIL): str,
                 vol.Required(CONF_PASSWORD): str,
                 vol.Required(CONF_PIN): str,
@@ -163,7 +170,7 @@ class HondaLinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(vin)
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=_vehicle_title(vehicle_info, vin, self._custom_name),
+                    title=_vehicle_title(vehicle_info, vin, self._custom_name, BRANDS[self._brand]["make"]),
                     data=data,
                 )
 
@@ -182,7 +189,7 @@ class HondaLinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(vin)
         self._abort_if_unique_id_configured()
         return self.async_create_entry(
-            title=_vehicle_title(vehicle_info, vin, self._custom_name),
+            title=_vehicle_title(vehicle_info, vin, self._custom_name, BRANDS[self._brand]["make"]),
             data=self._entry_data(api, email, password, pin, vin, vehicle_info),
         )
 
@@ -196,6 +203,7 @@ class HondaLinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         vehicle_info: dict[str, Any] | None,
     ) -> dict[str, Any]:
         return {
+            CONF_BRAND: api.brand,
             CONF_EMAIL: email,
             CONF_PASSWORD: password,
             CONF_PIN: pin,

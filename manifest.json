@@ -8,6 +8,6 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/daviddelahoz/ha-hondalink/issues",
   "loggers": ["custom_components.hondalink"],
-  "requirements": [],
+  "requirements": ["paho-mqtt>=2.0.0"],
   "version": "0.1.3"
 }

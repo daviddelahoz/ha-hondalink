@@ -40,4 +40,6 @@ class HondaLinkDeviceTracker(HondaLinkEntity, TrackerEntity):
     def location_accuracy(self) -> int | None:
         body = status_body(self.coordinator.data or {})
         radius = to_float(get_path(body, "gpsData.accuracy.radius"))
+        if radius is None:
+            radius = to_float(get_path(body, "gpsData.accuracy.horizontal"))
         return int(radius) if radius is not None else None

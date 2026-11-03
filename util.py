@@ -288,6 +288,9 @@ def dms_to_decimal(value: Any) -> float | None:
     if not value or value == "unknown":
         return None
     try:
+        if "," not in str(value):
+            # Plain decimal degrees (AcuraLink) instead of "degrees,minutes,seconds".
+            return float(value)
         parts = str(value).split(",")
         if len(parts) != 3:
             return None
@@ -336,3 +339,44 @@ def any_light_on(body: dict[str, Any]) -> bool | None:
             if str(item.get("lightState")).upper() != "OFF":
                 return True
     return False if found else None
+
+
+def merge_dashboard(base: dict[str, Any], newer: dict[str, Any]) -> dict[str, Any]:
+    """Overlay ``newer`` on ``base``; empty (None) values in ``newer`` keep the value from ``base``."""
+    merged = dict(base)
+    for key, value in newer.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = merge_dashboard(merged[key], value)
+        elif value is not None and value != "":
+            merged[key] = value
+    return merged
+
+
+_LAMP_ON_VALUES = {"ON", "1", "0X1"}
+
+
+def _preferred_group(groups: Any) -> list[dict[str, Any]]:
+    """Use English when the groups are per-language copies of the same data, else all groups."""
+    items = [group for group in groups or [] if isinstance(group, dict)]
+    if not any(group.get("languageCode") for group in items):
+        return items
+    english = [group for group in items if str(group.get("languageCode", "")).lower().startswith("en")]
+    return english or items[:1]
+
+
+def active_warning_lamps(body: dict[str, Any]) -> list[dict[str, Any]]:
+    lamps: list[dict[str, Any]] = []
+    for group in _preferred_group(get_path(body, "warningLamps.data", [])):
+        for message in group.get("messages", []) or []:
+            if isinstance(message, dict) and str(message.get("condition", "")).upper() in _LAMP_ON_VALUES:
+                lamps.append(message)
+    return lamps
+
+
+def maintenance_items(body: dict[str, Any]) -> list[str]:
+    items: list[str] = []
+    for group in _preferred_group(get_path(body, "maintenanceMinder.data", [])):
+        for message in group.get("messages", []) or []:
+            if isinstance(message, dict) and message.get("mmString"):
+                items.append(str(message["mmString"]).strip())
+    return items

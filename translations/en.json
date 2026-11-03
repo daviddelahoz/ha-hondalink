@@ -3,10 +3,11 @@
     "step": {
       "user": {
         "title": "HondaLink",
-        "description": "Enter your HondaLink account, remote PIN, and optionally a VIN. If VIN is blank, the integration will try to discover vehicles from the account.",
+        "description": "Choose HondaLink or AcuraLink, then enter your account, remote PIN, and optionally a VIN. If VIN is blank, the integration will try to discover vehicles from the account.",
         "data": {
           "email": "Email",
           "password": "Password",
+          "brand": "Brand",
           "pin": "Remote PIN",
           "vin": "VIN",
           "name": "Name"
@@ -65,6 +66,8 @@
       "any_window_open": {"name": "Any window open"},
       "any_light_on": {"name": "Any light on"},
       "warning_lamp_on": {"name": "Warning lamp on"},
+      "tire_pressure_low": {"name": "Tire pressure low"},
+      "maintenance_due": {"name": "Maintenance due"},
       "remote_engine_running": {"name": "Remote engine running"}
     },
     "button": {
@@ -73,6 +76,7 @@
       "horn": {"name": "Horn"},
       "lights": {"name": "Lights"},
       "stop_horn_lights": {"name": "Stop horn/lights"},
+      "update_location": {"name": "Update location"},
       "refresh": {"name": "Refresh"}
     },
     "lock": {

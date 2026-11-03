@@ -12,6 +12,6 @@ jobs:
       - name: Prepare hassfest layout
         run: |
           mkdir -p custom_components/hondalink
-          mv __init__.py api.py binary_sensor.py button.py config_flow.py const.py coordinator.py device_tracker.py entity.py lock.py manifest.json sensor.py util.py custom_components/hondalink/
+          mv __init__.py api.py binary_sensor.py button.py config_flow.py const.py coordinator.py device_tracker.py entity.py lock.py manifest.json push.py sensor.py util.py custom_components/hondalink/
           mv brand translations icon.png logo.png custom_components/hondalink/
       - uses: home-assistant/actions/hassfest@master

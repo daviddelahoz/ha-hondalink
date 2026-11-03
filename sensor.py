@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfLength, UnitOfPressure, UnitOfSpeed
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util.unit_conversion import SpeedConverter
 
 from .const import DATA_COORDINATOR, DOMAIN
 from .entity import HondaLinkEntity
@@ -27,6 +28,13 @@ from .util import (
 class HondaLinkSensorDescription(SensorEntityDescription):
     value_fn: Callable[[dict[str, Any]], Any]
     attr_fn: Callable[[dict[str, Any]], dict[str, Any]] | None = None
+
+
+def _speed_mph(body: dict[str, Any]) -> float | None:
+    speed = to_float(get_path(body, "gpsData.velocity.value"))
+    if speed is not None and str(get_path(body, "gpsData.velocity.unit", "")).upper() in ("KMH", "KM/H", "KPH"):
+        return round(SpeedConverter.convert(speed, UnitOfSpeed.KILOMETERS_PER_HOUR, UnitOfSpeed.MILES_PER_HOUR), 1)
+    return speed
 
 
 def _tire(path: str):
@@ -113,7 +121,7 @@ SENSORS: tuple[HondaLinkSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfSpeed.MILES_PER_HOUR,
         device_class=SensorDeviceClass.SPEED,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda body: to_float(get_path(body, "gpsData.velocity.value")),
+        value_fn=_speed_mph,
     ),
     HondaLinkSensorDescription(
         key="remote_engine_status",
