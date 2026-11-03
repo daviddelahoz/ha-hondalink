@@ -40,7 +40,9 @@ On newer (2GX) vehicles the results of a refresh or remote command are not avail
 
 Acura accounts also get an **Update location** button, which sends the app's Locate request. The location is not requested automatically; press the button (or call it from an automation) when you want a fresh position.
 
-Engine start/stop, horn, lights, and the 12V battery sensor have not been verified on Acura vehicles.
+Tested on a 2023 Acura MDX and a 2022 Acura RDX. Engine start/stop, horn, lights, and the 12V battery sensor have not been verified on Acura vehicles.
+
+After installing or updating, **restart Home Assistant** (a reload is not enough). The integration now depends on `paho-mqtt`, and the **Brand** option only appears in the setup form after a restart.
 
 ## Installation
 
